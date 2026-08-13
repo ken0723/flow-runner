@@ -1,0 +1,10 @@
+services:
+  grpc-server:
+    build: .
+    container_name: grpc-server-demo
+    ports:
+      - "50051:50051"
+    restart: unless-stopped
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
