@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package runner;
+
+service RunnerService {
+  rpc Run (Request) returns (stream Response);
+}
+
+message Request {
+  string command = 1;
+}
+
+message Response {
+  string output = 1;
+}

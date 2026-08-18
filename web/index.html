@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FlowRunner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="glow" aria-hidden="true"></div>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <path d="M4 11h5l2-6 3 12 2-6h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <h1>FlowRunner</h1>
+            <p>Local pipeline runner</p>
+          </div>
+        </div>
+        <div class="badge" id="status-badge">
+          <span class="dot"></span>
+          <span id="status-text">Idle</span>
+        </div>
+      </header>
+
+      <form class="panel" id="run-form">
+        <label class="label" for="command">Command</label>
+        <div class="input-row">
+          <span class="dollar">$</span>
+          <input
+            id="command"
+            name="command"
+            type="text"
+            placeholder="ping -c 4 8.8.8.8"
+            autocomplete="off"
+            spellcheck="false"
+            autofocus
+          />
+          <button type="submit" class="run-btn" id="run-btn">Run Pipeline</button>
+          <button type="button" class="stop-btn hidden" id="stop-btn">Stop</button>
+        </div>
+        <div class="chips" id="chips">
+          <button type="button" data-cmd="ping -c 4 8.8.8.8">ping -c 4 8.8.8.8</button>
+          <button type="button" data-cmd="uname -a">uname -a</button>
+          <button type="button" data-cmd="echo FlowRunner && sleep 1 && echo done">echo + sleep</button>
+        </div>
+      </form>
+
+      <section class="console-card">
+        <div class="console-bar">
+          <div class="traffic">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="console-title">Console</span>
+          <button type="button" class="clear-btn" id="clear-btn">Clear</button>
+        </div>
+        <div class="console" id="console">
+          <div class="placeholder" id="placeholder">
+            Waiting for a pipeline. Enter a command and press Run.
+          </div>
+          <div id="lines"></div>
+          <span class="cursor hidden" id="cursor"></span>
+        </div>
+      </section>
+    </div>
+    <script src="/app.js"></script>
+  </body>
+</html>

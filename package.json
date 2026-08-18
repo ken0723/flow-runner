@@ -2,8 +2,10 @@
   "name": "flow-runner",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
+    "gateway": "node gateway.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -11,8 +13,8 @@
     "url": "git+https://github.com/ken0723/flow-runner.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "ken0723",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/ken0723/flow-runner/issues"
@@ -20,6 +22,7 @@
   "homepage": "https://github.com/ken0723/flow-runner#readme",
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",
-    "@grpc/proto-loader": "^0.8.1"
+    "@grpc/proto-loader": "^0.8.1",
+    "express": "^4.21.2"
   }
 }

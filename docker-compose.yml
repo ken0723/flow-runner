@@ -1,10 +1,20 @@
 services:
   grpc-server:
     build: .
-    container_name: grpc-server-demo
+    container_name: grpc-server
     ports:
       - "50051:50051"
     restart: unless-stopped
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
+
+  gateway:
+    build: .
+    container_name: flow-runner-gateway
+    command: ["node", "gateway.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      GRPC_HOST: grpc-server:50051
+      PORT: "3000"
+    depends_on:
+      - grpc-server
+    restart: unless-stopped
