@@ -2,6 +2,8 @@ const path = require("path");
 const express = require("express");
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
+const { pool, initDb } = require("./db");
+const { createFilesRouter } = require("./files-api");
 
 const PROTO_PATH = path.join(__dirname, "protos", "runner.proto");
 const GRPC_HOST = process.env.GRPC_HOST || "localhost:50051";
@@ -25,11 +27,17 @@ function createGrpcClient() {
 const client = createGrpcClient();
 const app = express();
 
-app.use(express.json({ limit: "32kb" }));
+app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "web")));
+app.use("/api/files", createFilesRouter(pool));
 
-app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, grpc: GRPC_HOST });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.json({ ok: true, grpc: GRPC_HOST, db: true });
+  } catch {
+    res.status(503).json({ ok: false, grpc: GRPC_HOST, db: false });
+  }
 });
 
 app.post("/api/run", (req, res) => {
@@ -98,7 +106,21 @@ app.post("/api/run", (req, res) => {
   });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`FlowRunner gateway on http://localhost:${PORT}`);
-  console.log(`Proxying gRPC to ${GRPC_HOST}`);
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  if (res.headersSent) return;
+  res.status(500).json({ error: err.message || "internal error" });
+});
+
+async function main() {
+  await initDb();
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`FlowRunner gateway on http://localhost:${PORT}`);
+    console.log(`Proxying gRPC to ${GRPC_HOST}`);
+  });
+}
+
+main().catch((err) => {
+  console.error("Failed to start gateway:", err);
+  process.exit(1);
 });

@@ -1,14 +1,34 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FlowRunner</title>
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") === "light" ? "light" : "dark";
+        const lang = localStorage.getItem("lang") === "en" ? "en" : "zh-Hant";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.lang = lang;
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/material-darker.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/eclipse.min.css"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -23,56 +43,94 @@
             </svg>
           </div>
           <div>
-            <h1>FlowRunner</h1>
-            <p>Local pipeline runner</p>
+            <h1 data-i18n="app.title">FlowRunner</h1>
+            <p data-i18n="app.subtitle">本地流程執行器</p>
           </div>
         </div>
-        <div class="badge" id="status-badge">
-          <span class="dot"></span>
-          <span id="status-text">Idle</span>
+        <div class="header-actions">
+          <div class="lang-picker">
+            <button
+              type="button"
+              class="icon-btn lang-btn"
+              id="lang-btn"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              data-i18n-aria="lang.label"
+            >
+              <span id="lang-btn-label">繁</span>
+            </button>
+            <div class="lang-dropdown hidden" id="lang-menu" role="listbox">
+              <button type="button" role="option" data-lang="zh-Hant" data-i18n="lang.zhHant">繁體中文</button>
+              <button type="button" role="option" data-lang="en" data-i18n="lang.en">English</button>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" id="theme-btn" data-i18n-aria="theme.toLight">
+            <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="3.1" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M8 1.4v1.5M8 13.1v1.5M1.4 8h1.5M13.1 8h1.5M3.3 3.3l1.1 1.1M11.6 11.6l1.1 1.1M3.3 12.7l1.1-1.1M11.6 4.4l1.1-1.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <svg class="theme-icon theme-icon-moon hidden" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M13.2 9.6A5.4 5.4 0 0 1 6.4 2.8 5.5 5.5 0 1 0 13.2 9.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="badge" id="status-badge">
+            <span class="dot"></span>
+            <span id="status-text" data-i18n="status.idle">閒置</span>
+          </div>
         </div>
       </header>
 
-      <form class="panel" id="run-form">
-        <label class="label" for="command">Command</label>
-        <div class="input-row">
-          <span class="dollar">$</span>
-          <input
-            id="command"
-            name="command"
-            type="text"
-            placeholder="ping -c 4 8.8.8.8"
-            autocomplete="off"
-            spellcheck="false"
-            autofocus
-          />
-          <button type="submit" class="run-btn" id="run-btn">Run Pipeline</button>
-          <button type="button" class="stop-btn hidden" id="stop-btn">Stop</button>
-        </div>
-        <div class="chips" id="chips">
-          <button type="button" data-cmd="ping -c 4 8.8.8.8">ping -c 4 8.8.8.8</button>
-          <button type="button" data-cmd="uname -a">uname -a</button>
-          <button type="button" data-cmd="echo FlowRunner && sleep 1 && echo done">echo + sleep</button>
-        </div>
-      </form>
+      <div class="workspace">
+        <aside class="file-explorer" aria-label="Files">
+          <div class="explorer-bar">
+            <span class="explorer-title" data-i18n="files.title">檔案</span>
+            <button type="button" class="check-btn explorer-new" id="new-file-btn" data-i18n="files.new">新增</button>
+          </div>
+          <div class="file-list" id="file-list"></div>
+        </aside>
 
-      <section class="console-card">
-        <div class="console-bar">
-          <div class="traffic">
-            <span></span><span></span><span></span>
+        <section class="editor-card">
+          <div class="editor-bar">
+            <div class="traffic">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="editor-title" id="file-title">pipeline.yml</span>
+            <span class="file-dirty hidden" id="file-dirty" data-i18n="files.unsaved">未儲存</span>
+            <span class="yaml-status" id="yaml-status" data-i18n="yaml.checking">正在檢查 YAML…</span>
+            <button type="button" class="check-btn" id="check-yaml-btn">
+              <span class="check-spinner" aria-hidden="true"></span>
+              <span class="check-label" data-i18n="yaml.check">檢查 YAML</span>
+            </button>
           </div>
-          <span class="console-title">Console</span>
-          <button type="button" class="clear-btn" id="clear-btn">Clear</button>
-        </div>
-        <div class="console" id="console">
-          <div class="placeholder" id="placeholder">
-            Waiting for a pipeline. Enter a command and press Run.
-          </div>
-          <div id="lines"></div>
-          <span class="cursor hidden" id="cursor"></span>
-        </div>
-      </section>
+          <textarea id="yaml-editor" data-i18n-aria="yaml.editorAria"></textarea>
+        </section>
+      </div>
     </div>
+
+    <nav class="speed-dial" data-i18n-aria="execute.actions">
+      <button type="button" class="speed-dial-fab" id="execute-btn">
+        <svg class="speed-dial-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M5 3.4v11.2L15 9 5 3.4Z" fill="currentColor"/>
+        </svg>
+        <span data-i18n="execute.label">執行</span>
+      </button>
+    </nav>
+
+    <div class="modal-backdrop hidden" id="dialog-backdrop">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-body">
+        <h2 id="dialog-title"></h2>
+        <p id="dialog-body"></p>
+        <input id="dialog-input" class="dialog-input hidden" type="text" spellcheck="false" autocomplete="off" />
+        <div class="modal-actions">
+          <button type="button" class="modal-cancel" id="dialog-cancel"></button>
+          <button type="button" class="modal-confirm" id="dialog-ok"></button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/yaml/yaml.min.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

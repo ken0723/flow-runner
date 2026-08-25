@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "FlowRunner",
+    "subtitle": "本地流程執行器"
+  },
+  "status": {
+    "idle": "閒置",
+    "valid": "有效",
+    "invalid": "無效",
+    "checking": "檢查中",
+    "saved": "已儲存"
+  },
+  "yaml": {
+    "editorAria": "YAML 編輯器",
+    "check": "檢查 YAML",
+    "checkingBtn": "檢查中…",
+    "checking": "正在檢查 YAML…",
+    "valid": "YAML 格式正確",
+    "error": "{where} 有語法錯誤：{message}",
+    "whereLine": "第 {line} 行",
+    "whereLineCol": "第 {line} 行，第 {column} 欄",
+    "errorMarker": "YAML 語法錯誤"
+  },
+  "files": {
+    "title": "檔案",
+    "new": "新增",
+    "empty": "尚未有檔案",
+    "unsaved": "未儲存",
+    "saved": "已儲存",
+    "newTitle": "新增 YAML 檔",
+    "newBody": "輸入檔名。如果沒有副檔名，會自動加上 .yml。",
+    "namePlaceholder": "pipeline.yml",
+    "create": "建立",
+    "delete": "刪除",
+    "deleteTitle": "刪除這個檔案？",
+    "deleteBody": "「{name}」會從資料庫移除。",
+    "unsavedTitle": "有未儲存的變更",
+    "unsavedBody": "切換檔案會捨棄「{name}」尚未儲存的內容。",
+    "discard": "捨棄",
+    "nameInvalid": "請使用類似 pipeline.yml 的檔名",
+    "nameExists": "已有同名檔案",
+    "saveFailed": "儲存失敗",
+    "loadFailed": "無法載入檔案"
+  },
+  "execute": {
+    "label": "執行",
+    "actions": "操作",
+    "confirmTitle": "確定要執行這個 pipeline？",
+    "confirmBody": "即將執行編輯器裡目前的 YAML。",
+    "confirm": "執行",
+    "cancel": "取消"
+  },
+  "theme": {
+    "toLight": "切換至淺色模式",
+    "toDark": "切換至深色模式"
+  },
+  "lang": {
+    "label": "語言",
+    "zhHant": "繁體中文",
+    "en": "English"
+  }
+}

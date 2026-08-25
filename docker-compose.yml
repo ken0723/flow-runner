@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: flow-runner-db
+    environment:
+      POSTGRES_USER: flowrunner
+      POSTGRES_PASSWORD: flowrunner
+      POSTGRES_DB: flowrunner
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowrunner -d flowrunner"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
   grpc-server:
     build: .
     container_name: grpc-server
@@ -15,6 +33,13 @@ services:
     environment:
       GRPC_HOST: grpc-server:50051
       PORT: "3000"
+      DATABASE_URL: postgres://flowrunner:flowrunner@postgres:5432/flowrunner
     depends_on:
-      - grpc-server
+      postgres:
+        condition: service_healthy
+      grpc-server:
+        condition: service_started
     restart: unless-stopped
+
+volumes:
+  pgdata:

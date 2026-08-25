@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "FlowRunner",
+    "subtitle": "Local pipeline runner"
+  },
+  "status": {
+    "idle": "Idle",
+    "valid": "Valid",
+    "invalid": "Invalid",
+    "checking": "Checking",
+    "saved": "Saved"
+  },
+  "yaml": {
+    "editorAria": "YAML editor",
+    "check": "Check YAML",
+    "checkingBtn": "Checking…",
+    "checking": "Checking YAML…",
+    "valid": "YAML is valid",
+    "error": "Syntax error at {where}: {message}",
+    "whereLine": "line {line}",
+    "whereLineCol": "line {line}, column {column}",
+    "errorMarker": "YAML syntax error"
+  },
+  "files": {
+    "title": "Files",
+    "new": "New",
+    "empty": "No files yet",
+    "unsaved": "Unsaved",
+    "saved": "Saved",
+    "newTitle": "New YAML file",
+    "newBody": "Enter a file name. .yml is added automatically if missing.",
+    "namePlaceholder": "pipeline.yml",
+    "create": "Create",
+    "delete": "Delete",
+    "deleteTitle": "Delete this file?",
+    "deleteBody": "“{name}” will be removed from the database.",
+    "unsavedTitle": "Unsaved changes",
+    "unsavedBody": "Switching files will discard unsaved changes to “{name}”.",
+    "discard": "Discard",
+    "nameInvalid": "Use a name like pipeline.yml",
+    "nameExists": "A file with that name already exists",
+    "saveFailed": "Save failed",
+    "loadFailed": "Could not load files"
+  },
+  "execute": {
+    "label": "Execute",
+    "actions": "Actions",
+    "confirmTitle": "Execute this pipeline?",
+    "confirmBody": "This will run the YAML currently in the editor.",
+    "confirm": "Execute",
+    "cancel": "Cancel"
+  },
+  "theme": {
+    "toLight": "Switch to light mode",
+    "toDark": "Switch to dark mode"
+  },
+  "lang": {
+    "label": "Language",
+    "zhHant": "繁體中文",
+    "en": "English"
+  }
+}
