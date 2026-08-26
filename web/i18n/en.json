@@ -10,6 +10,25 @@
     "checking": "Checking",
     "saved": "Saved"
   },
+  "view": {
+    "label": "Editor view",
+    "nodes": "Node",
+    "yaml": "YAML",
+    "invalidYaml": "Fix YAML syntax before switching to the node view."
+  },
+  "nodes": {
+    "palette": "Nodes",
+    "start": "Start",
+    "command": "Command",
+    "end": "End",
+    "name": "Name",
+    "namePlaceholder": "pipeline",
+    "commandLabel": "Command",
+    "commandPlaceholder": "echo hello",
+    "empty": "Add a Start node, then connect Command and End.",
+    "delete": "Delete node",
+    "deleteEdge": "Delete connection"
+  },
   "yaml": {
     "editorAria": "YAML editor",
     "check": "Check YAML",

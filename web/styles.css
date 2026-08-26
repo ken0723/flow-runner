@@ -88,7 +88,7 @@ body {
 
 .app {
   position: relative;
-  max-width: 1180px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 28px 20px 24px;
   min-height: 100vh;
@@ -390,6 +390,59 @@ h1 {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
 }
 
+.editor-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.view-toggle {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.view-toggle-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.view-toggle-btn:hover {
+  color: var(--text);
+  background: var(--menu-hover);
+}
+
+.view-toggle-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.view-toggle-btn.is-active:hover {
+  background: var(--accent-hover);
+  color: var(--accent-fg);
+}
+
+.editor-card[data-view="nodes"] .yaml-status,
+.editor-card[data-view="nodes"] .check-btn,
+.editor-card[data-view="nodes"] .CodeMirror {
+  display: none !important;
+}
+
+.editor-card[data-view="yaml"] .flow-canvas {
+  display: none;
+}
+
 .yaml-status {
   flex: 1;
   min-width: 0;
@@ -471,6 +524,408 @@ h1 {
   font-size: 13px;
   line-height: 1.65;
   border-radius: 0 0 14px 14px;
+}
+
+.flow-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  background: var(--editor-bg);
+  border-radius: 0 0 14px 14px;
+  overflow: hidden;
+}
+
+.flow-viewport {
+  order: 1;
+}
+
+.flow-palette {
+  order: 2;
+  width: 92px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 10px;
+  border-left: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  z-index: 3;
+}
+
+.flow-palette-title {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.flow-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--badge-bg);
+  color: var(--text);
+  padding: 10px 6px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.flow-add:hover {
+  border-color: var(--border-strong);
+}
+
+.flow-add-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.flow-add-icon.is-start,
+.flow-node.is-start .flow-node-icon {
+  background: #16a34a;
+}
+
+.flow-add-icon.is-command,
+.flow-node.is-command .flow-node-icon {
+  background: #2563eb;
+}
+
+.flow-add-icon.is-end,
+.flow-node.is-end .flow-node-icon {
+  background: #dc2626;
+}
+
+.flow-viewport {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  outline: 0;
+  touch-action: none;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--muted) 42%, transparent) 1.1px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+
+.flow-viewport.is-panning {
+  cursor: grabbing;
+}
+
+.flow-viewport.is-selecting {
+  cursor: crosshair;
+}
+
+.flow-canvas.is-connecting .flow-viewport {
+  cursor: crosshair;
+}
+
+.flow-marquee {
+  position: absolute;
+  z-index: 6;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  pointer-events: none;
+}
+
+.flow-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 24px;
+  text-align: center;
+}
+
+.flow-empty[hidden] {
+  display: none;
+}
+
+.flow-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  transform-origin: 0 0;
+}
+
+.flow-wires {
+  position: absolute;
+  overflow: visible;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.flow-wire-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 22;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.flow-wire-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 70%, var(--text));
+  stroke-width: 2.2;
+  pointer-events: none;
+}
+
+.flow-wire.is-selected .flow-wire-line,
+.flow-wire:hover .flow-wire-line {
+  stroke: var(--accent);
+}
+
+.flow-wire.is-temp .flow-wire-line {
+  stroke: var(--amber);
+  stroke-dasharray: 6 5;
+}
+
+.flow-wire-delete {
+  pointer-events: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.flow-wire:hover .flow-wire-delete,
+.flow-wire.is-selected .flow-wire-delete {
+  pointer-events: all;
+  opacity: 1;
+}
+
+.flow-wire-delete-bg {
+  fill: var(--panel);
+  stroke: var(--red);
+  stroke-width: 1.6;
+}
+
+.flow-wire-delete-x {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
+.flow-wire-delete:hover .flow-wire-delete-bg {
+  fill: var(--red);
+}
+
+.flow-wire-delete:hover .flow-wire-delete-x {
+  stroke: #fff;
+}
+
+.flow-nodes {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.flow-node {
+  position: absolute;
+  width: 248px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  cursor: grab;
+  user-select: none;
+}
+
+.flow-canvas.is-dragging-nodes .flow-node.is-selected {
+  cursor: grabbing;
+}
+
+.flow-node.is-selected {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 5px color-mix(in srgb, var(--accent) 28%, transparent),
+    0 12px 32px rgba(0, 0, 0, 0.28);
+  z-index: 2;
+}
+
+.flow-node.is-drop {
+  box-shadow: 0 0 0 2px var(--green);
+}
+
+.flow-node-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 8px 12px;
+}
+
+.flow-node-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.flow-node-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-node-type {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.flow-node-id {
+  color: var(--muted);
+  font-size: 11px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.flow-node-delete {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.flow-node:hover .flow-node-delete,
+.flow-node.is-selected .flow-node-delete {
+  opacity: 1;
+}
+
+.flow-node-delete:hover {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.flow-node-body {
+  padding: 0 12px 12px;
+}
+
+.flow-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.flow-field input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--editor-bg);
+  color: var(--text);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: 0;
+  cursor: text;
+}
+
+.flow-field input:focus {
+  border-color: var(--border-strong);
+}
+
+.flow-echo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--editor-bg);
+  padding: 8px 10px;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.flow-echo-prompt {
+  color: var(--green);
+}
+
+.flow-echo code {
+  color: var(--text);
+  font-family: inherit;
+}
+
+.flow-port {
+  position: absolute;
+  top: 26px;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 2px solid var(--panel);
+  border-radius: 50%;
+  background: var(--muted);
+  cursor: crosshair;
+  z-index: 4;
+}
+
+.flow-port::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+
+.flow-port-in {
+  left: -7px;
+}
+
+.flow-port-out {
+  right: -7px;
+}
+
+.flow-node.is-start .flow-port-out,
+.flow-add-icon.is-start + span {
+  color: inherit;
+}
+
+.flow-node.is-start .flow-port-out {
+  background: #16a34a;
+}
+
+.flow-node.is-command .flow-port {
+  background: #2563eb;
+}
+
+.flow-node.is-end .flow-port-in {
+  background: #dc2626;
+}
+
+.flow-port:hover,
+.flow-port.is-target {
+  transform: scale(1.2);
+}
+
+.flow-port.is-target {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 40%, transparent);
 }
 
 .editor-card .CodeMirror-gutters {
@@ -664,6 +1119,10 @@ h1 {
   .yaml-status,
   .file-dirty {
     display: none;
+  }
+
+  .view-toggle-btn {
+    padding: 6px 10px;
   }
 
   .speed-dial {

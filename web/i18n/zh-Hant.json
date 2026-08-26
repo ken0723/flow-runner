@@ -10,6 +10,25 @@
     "checking": "檢查中",
     "saved": "已儲存"
   },
+  "view": {
+    "label": "編輯視圖",
+    "nodes": "節點",
+    "yaml": "YAML",
+    "invalidYaml": "請先修正 YAML 語法，再切換到節點視圖。"
+  },
+  "nodes": {
+    "palette": "節點",
+    "start": "Start",
+    "command": "Command",
+    "end": "End",
+    "name": "名稱",
+    "namePlaceholder": "pipeline",
+    "commandLabel": "指令",
+    "commandPlaceholder": "echo hello",
+    "empty": "先加入 Start，再接上 Command 同 End。",
+    "delete": "刪除節點",
+    "deleteEdge": "刪除連線"
+  },
   "yaml": {
     "editorAria": "YAML 編輯器",
     "check": "檢查 YAML",

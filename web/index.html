@@ -89,7 +89,7 @@
           <div class="file-list" id="file-list"></div>
         </aside>
 
-        <section class="editor-card">
+        <section class="editor-card" id="editor-card" data-view="nodes">
           <div class="editor-bar">
             <div class="traffic">
               <span></span><span></span><span></span>
@@ -101,8 +101,35 @@
               <span class="check-spinner" aria-hidden="true"></span>
               <span class="check-label" data-i18n="yaml.check">檢查 YAML</span>
             </button>
+            <div class="view-toggle" role="tablist" data-i18n-aria="view.label">
+              <button
+                type="button"
+                class="view-toggle-btn is-active"
+                id="view-nodes-btn"
+                role="tab"
+                aria-selected="true"
+                data-view="nodes"
+                data-i18n="view.nodes"
+              >
+                Node
+              </button>
+              <button
+                type="button"
+                class="view-toggle-btn"
+                id="view-yaml-btn"
+                role="tab"
+                aria-selected="false"
+                data-view="yaml"
+                data-i18n="view.yaml"
+              >
+                YAML
+              </button>
+            </div>
           </div>
-          <textarea id="yaml-editor" data-i18n-aria="yaml.editorAria"></textarea>
+          <div class="editor-stage">
+            <div id="flow-canvas" class="flow-canvas"></div>
+            <textarea id="yaml-editor" data-i18n-aria="yaml.editorAria"></textarea>
+          </div>
         </section>
       </div>
     </div>
@@ -131,6 +158,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/yaml/yaml.min.js"></script>
+    <script src="/flow-canvas.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

@@ -5,15 +5,22 @@ const pool = new Pool({
     process.env.DATABASE_URL || "postgres://flowrunner:flowrunner@localhost:5432/flowrunner",
 });
 
-const DEFAULT_CONTENT = `name: example-pipeline
-on: manual
-jobs:
-  ping:
-    steps:
-      - name: ping dns
-        run: ping -c 4 8.8.8.8
-      - name: finish
-        run: echo done
+const DEFAULT_CONTENT = `name: pipeline
+nodes:
+  - id: start_1
+    type: start
+    name: pipeline
+  - id: command_1
+    type: command
+    command: echo hello
+  - id: end_1
+    type: end
+    echo: done
+edges:
+  - from: start_1
+    to: command_1
+  - from: command_1
+    to: end_1
 `;
 
 async function waitForDb(attempts = 40) {

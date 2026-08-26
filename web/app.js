@@ -25,6 +25,9 @@ const fileListEl = document.getElementById("file-list");
 const fileTitle = document.getElementById("file-title");
 const fileDirtyEl = document.getElementById("file-dirty");
 const newFileBtn = document.getElementById("new-file-btn");
+const editorCard = document.getElementById("editor-card");
+const viewNodesBtn = document.getElementById("view-nodes-btn");
+const viewYamlBtn = document.getElementById("view-yaml-btn");
 
 let messages = {};
 let currentLang = document.documentElement.lang === "en" ? "en" : "zh-Hant";
@@ -39,6 +42,9 @@ let dirty = false;
 let loadingFile = false;
 let saving = false;
 let dialogResolver = null;
+let viewMode = localStorage.getItem("editorView") === "yaml" ? "yaml" : "nodes";
+let flowCanvas = null;
+let syncingYaml = false;
 
 const editor = CodeMirror.fromTextArea(document.getElementById("yaml-editor"), {
   mode: "yaml",
@@ -92,6 +98,8 @@ function applyTranslations() {
   if (lastYamlResult) setYamlStatus(lastYamlResult);
   renderFileList();
   updateFileMeta();
+  updateViewButtons();
+  flowCanvas?.refresh();
 }
 
 async function setLanguage(lang) {
@@ -276,6 +284,148 @@ function executePipeline() {
   // TODO: connect to /api/run
 }
 
+function starterGraph() {
+  return {
+    nodes: [
+      { id: "start_1", type: "start", name: "pipeline", x: 72, y: 180 },
+      { id: "command_1", type: "command", command: "echo hello", x: 360, y: 180 },
+      { id: "end_1", type: "end", echo: "done", x: 648, y: 180 },
+    ],
+    edges: [
+      { from: "start_1", to: "command_1" },
+      { from: "command_1", to: "end_1" },
+    ],
+  };
+}
+
+function graphToYaml(graph) {
+  const start = (graph.nodes || []).find((node) => node.type === "start");
+  const doc = {
+    name: String(start?.name || "").trim() || "pipeline",
+    nodes: (graph.nodes || []).map((node) => {
+      const item = { id: node.id, type: node.type };
+      if (node.type === "start") item.name = node.name ?? "";
+      if (node.type === "command") item.command = node.command ?? "";
+      if (node.type === "end") item.echo = "done";
+      return item;
+    }),
+    edges: (graph.edges || []).map((edge) => ({ from: edge.from, to: edge.to })),
+  };
+  return jsyaml.dump(doc, { indent: 2, lineWidth: 120, noRefs: true });
+}
+
+function yamlToGraph(text, previous = { nodes: [] }) {
+  let doc;
+  try {
+    doc = jsyaml.load(text ?? "");
+  } catch {
+    return { nodes: [], edges: [] };
+  }
+
+  if (!doc || typeof doc !== "object" || Array.isArray(doc)) {
+    return { nodes: [], edges: [] };
+  }
+
+  const prevById = new Map((previous.nodes || []).map((node) => [node.id, node]));
+  const nodesIn = Array.isArray(doc.nodes) ? doc.nodes : [];
+  const nodes = [];
+  const usedIds = new Set();
+
+  for (const raw of nodesIn) {
+    if (!raw || typeof raw !== "object") continue;
+    const type = raw.type === "start" || raw.type === "command" || raw.type === "end" ? raw.type : null;
+    if (!type) continue;
+
+    let id = String(raw.id || "").trim() || `${type}_${nodes.length + 1}`;
+    if (usedIds.has(id)) id = `${id}_${nodes.length + 1}`;
+    usedIds.add(id);
+
+    const prev = prevById.get(id);
+    const node = {
+      id,
+      type,
+      x: Number.isFinite(prev?.x)
+        ? prev.x
+        : Number.isFinite(Number(raw.x))
+          ? Number(raw.x)
+          : 72 + nodes.length * 288,
+      y: Number.isFinite(prev?.y)
+        ? prev.y
+        : Number.isFinite(Number(raw.y))
+          ? Number(raw.y)
+          : 180,
+    };
+    if (type === "start") node.name = String(raw.name ?? doc.name ?? "");
+    if (type === "command") node.command = String(raw.command ?? "");
+    if (type === "end") node.echo = "done";
+    nodes.push(node);
+  }
+
+  const ids = new Set(nodes.map((node) => node.id));
+  const edges = [];
+  for (const raw of Array.isArray(doc.edges) ? doc.edges : []) {
+    if (!raw || typeof raw !== "object") continue;
+    const from = String(raw.from || "");
+    const to = String(raw.to || "");
+    if (!ids.has(from) || !ids.has(to) || from === to) continue;
+    if (edges.some((edge) => edge.from === from && edge.to === to)) continue;
+    edges.push({ from, to });
+  }
+
+  return { nodes, edges };
+}
+
+function writeYamlFromGraph() {
+  if (!flowCanvas) return;
+  syncingYaml = true;
+  editor.setValue(graphToYaml(flowCanvas.getGraph()));
+  syncingYaml = false;
+  validateEditorYaml();
+}
+
+function loadGraphFromYaml(content, { preservePositions = false, resetHistory = true } = {}) {
+  const previous = preservePositions ? flowCanvas?.getGraph() : { nodes: [] };
+  flowCanvas?.setGraph(yamlToGraph(content ?? "", previous), { resetHistory });
+}
+
+function updateViewButtons() {
+  viewNodesBtn.classList.toggle("is-active", viewMode === "nodes");
+  viewYamlBtn.classList.toggle("is-active", viewMode === "yaml");
+  viewNodesBtn.setAttribute("aria-selected", viewMode === "nodes" ? "true" : "false");
+  viewYamlBtn.setAttribute("aria-selected", viewMode === "yaml" ? "true" : "false");
+}
+
+function applyView(mode) {
+  viewMode = mode === "yaml" ? "yaml" : "nodes";
+  localStorage.setItem("editorView", viewMode);
+  editorCard.dataset.view = viewMode;
+  updateViewButtons();
+  if (viewMode === "yaml") {
+    window.requestAnimationFrame(() => {
+      editor.setSize("100%", "100%");
+      editor.refresh();
+    });
+  }
+}
+
+function switchView(mode) {
+  const next = mode === "yaml" ? "yaml" : "nodes";
+  if (next === viewMode) return;
+
+  if (next === "nodes") {
+    const result = validateEditorYaml();
+    if (!result.valid) {
+      yamlStatus.textContent = t("view.invalidYaml");
+      return;
+    }
+    loadGraphFromYaml(editor.getValue(), { preservePositions: true });
+  } else if ((flowCanvas?.getGraph()?.nodes || []).length) {
+    writeYamlFromGraph();
+  }
+
+  applyView(next);
+}
+
 function updateFileMeta() {
   fileTitle.textContent = currentFile?.name || t("yaml.editorAria");
   fileDirtyEl.classList.toggle("hidden", !dirty);
@@ -287,6 +437,15 @@ function setEditorContent(content) {
   editor.setValue(content ?? "");
   loadingFile = false;
   dirty = false;
+  loadGraphFromYaml(content ?? "");
+  if ((flowCanvas?.getGraph()?.nodes || []).length) {
+    const normalized = graphToYaml(flowCanvas.getGraph());
+    if (normalized !== editor.getValue()) {
+      loadingFile = true;
+      editor.setValue(normalized);
+      loadingFile = false;
+    }
+  }
   updateFileMeta();
   validateEditorYaml();
   editor.setSize("100%", "100%");
@@ -369,6 +528,8 @@ async function saveCurrentFile() {
     return;
   }
 
+  if (viewMode === "nodes") writeYamlFromGraph();
+
   saving = true;
   try {
     const response = await fetch(`/api/files/${currentFile.id}`, {
@@ -418,7 +579,7 @@ async function createFile() {
     const response = await fetch("/api/files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: trimmed, content: "" }),
+      body: JSON.stringify({ name: trimmed, content: graphToYaml(starterGraph()) }),
     });
     if (response.status === 409) {
       setStatus("error", "files.nameExists");
@@ -475,7 +636,7 @@ async function loadInitialFile() {
 }
 
 editor.on("changes", () => {
-  if (!loadingFile) {
+  if (!loadingFile && !syncingYaml) {
     dirty = true;
     updateFileMeta();
   }
@@ -490,6 +651,9 @@ checkYamlBtn.addEventListener("click", () => {
 newFileBtn.addEventListener("click", () => {
   createFile();
 });
+
+viewNodesBtn.addEventListener("click", () => switchView("nodes"));
+viewYamlBtn.addEventListener("click", () => switchView("yaml"));
 
 executeBtn.addEventListener("click", async () => {
   const ok = await openDialog({
@@ -548,14 +712,49 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (isDialogOpen()) return;
+
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
     event.preventDefault();
     saveCurrentFile();
+    return;
   }
-});
+
+  if (viewMode !== "nodes") return;
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+    event.preventDefault();
+    if (event.shiftKey) flowCanvas?.redo();
+    else flowCanvas?.undo();
+    return;
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
+    event.preventDefault();
+    flowCanvas?.redo();
+    return;
+  }
+
+  if (event.key === "Delete" || event.key === "Backspace") {
+    if (event.target.closest("input, textarea, .CodeMirror")) return;
+    if (flowCanvas?.deleteSelection()) event.preventDefault();
+  }
+}, true);
 
 async function init() {
   applyTheme(currentTheme());
+  flowCanvas = FlowCanvas.create({
+    el: document.getElementById("flow-canvas"),
+    t,
+    onChange() {
+      const next = graphToYaml(flowCanvas.getGraph());
+      if (next === editor.getValue()) return;
+      writeYamlFromGraph();
+      dirty = true;
+      updateFileMeta();
+    },
+  });
+  applyView(viewMode);
   try {
     await setLanguage(currentLang);
   } catch {
