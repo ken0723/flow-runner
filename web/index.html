@@ -87,7 +87,27 @@
             <button type="button" class="check-btn explorer-new" id="new-file-btn" data-i18n="files.new">新增</button>
           </div>
           <div class="file-list" id="file-list"></div>
+          <div
+            class="sash sash-horizontal"
+            id="history-sash"
+            role="separator"
+            aria-orientation="horizontal"
+            data-i18n-aria="files.resizeHistory"
+          ></div>
+          <div class="history-panel" id="history-panel">
+            <div class="explorer-bar">
+              <span class="explorer-title" data-i18n="files.history">歷史</span>
+            </div>
+            <div class="file-list version-list" id="version-list"></div>
+          </div>
         </aside>
+        <div
+          class="sash sash-vertical"
+          id="explorer-sash"
+          role="separator"
+          aria-orientation="vertical"
+          data-i18n-aria="files.resizeExplorer"
+        ></div>
 
         <section class="editor-card" id="editor-card" data-view="nodes">
           <div class="editor-bar">
@@ -96,6 +116,10 @@
             </div>
             <span class="editor-title" id="file-title">pipeline.yml</span>
             <span class="file-dirty hidden" id="file-dirty" data-i18n="files.unsaved">未儲存</span>
+            <span class="preview-banner hidden" id="preview-banner">
+              <span id="preview-text"></span>
+              <button type="button" class="check-btn" id="restore-btn" data-i18n="files.restore">還原</button>
+            </span>
             <span class="yaml-status" id="yaml-status" data-i18n="yaml.checking">正在檢查 YAML…</span>
             <button type="button" class="check-btn" id="check-yaml-btn">
               <span class="check-spinner" aria-hidden="true"></span>
@@ -131,6 +155,14 @@
             <textarea id="yaml-editor" data-i18n-aria="yaml.editorAria"></textarea>
           </div>
         </section>
+        <div
+          class="sash sash-vertical"
+          id="palette-sash"
+          role="separator"
+          aria-orientation="vertical"
+          data-i18n-aria="files.resizePalette"
+        ></div>
+        <aside class="node-panel" id="node-panel" data-i18n-aria="nodes.palette"></aside>
       </div>
     </div>
 

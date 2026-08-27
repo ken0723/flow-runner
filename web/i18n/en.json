@@ -59,7 +59,19 @@
     "nameInvalid": "Use a name like pipeline.yml",
     "nameExists": "A file with that name already exists",
     "saveFailed": "Save failed",
-    "loadFailed": "Could not load files"
+    "loadFailed": "Could not load files",
+    "history": "History",
+    "historyEmpty": "No snapshots yet",
+    "previewing": "Previewing {name}",
+    "restore": "Restore",
+    "restoreTitle": "Restore this snapshot?",
+    "restoreBody": "Current YAML will be replaced with “{name}”.",
+    "deleteSnapshot": "Delete snapshot",
+    "deleteSnapshotTitle": "Delete this snapshot?",
+    "deleteSnapshotBody": "“{name}” will be removed from history. The current file is unchanged.",
+    "resizeExplorer": "Resize files panel",
+    "resizeHistory": "Resize history",
+    "resizePalette": "Resize nodes panel"
   },
   "execute": {
     "label": "Execute",

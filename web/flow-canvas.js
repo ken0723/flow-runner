@@ -98,6 +98,7 @@
     const nodesEl = root.querySelector(".flow-nodes");
     const emptyEl = root.querySelector(".flow-empty");
     const marqueeEl = root.querySelector(".flow-marquee");
+    const paletteEl = root.querySelector(".flow-palette");
 
     function emitChange() {
       options.onChange?.();
@@ -142,15 +143,19 @@
     }
 
     function applyI18n() {
-      root.querySelectorAll("[data-i18n-flow]").forEach((el) => {
-        el.textContent = t(el.dataset.i18nFlow);
-      });
-      root.querySelectorAll("[data-i18n-flow-aria]").forEach((el) => {
-        el.setAttribute("aria-label", t(el.dataset.i18nFlowAria));
-      });
-      root.querySelectorAll("[data-i18n-flow-placeholder]").forEach((el) => {
-        el.setAttribute("placeholder", t(el.dataset.i18nFlowPlaceholder));
-      });
+      const scopes = [root];
+      if (paletteEl && paletteEl !== root && !root.contains(paletteEl)) scopes.push(paletteEl);
+      for (const scope of scopes) {
+        scope.querySelectorAll("[data-i18n-flow]").forEach((el) => {
+          el.textContent = t(el.dataset.i18nFlow);
+        });
+        scope.querySelectorAll("[data-i18n-flow-aria]").forEach((el) => {
+          el.setAttribute("aria-label", t(el.dataset.i18nFlowAria));
+        });
+        scope.querySelectorAll("[data-i18n-flow-placeholder]").forEach((el) => {
+          el.setAttribute("placeholder", t(el.dataset.i18nFlowPlaceholder));
+        });
+      }
     }
 
     function applyTransform() {

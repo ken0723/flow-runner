@@ -25,6 +25,10 @@ const fileListEl = document.getElementById("file-list");
 const fileTitle = document.getElementById("file-title");
 const fileDirtyEl = document.getElementById("file-dirty");
 const newFileBtn = document.getElementById("new-file-btn");
+const versionListEl = document.getElementById("version-list");
+const previewBanner = document.getElementById("preview-banner");
+const previewText = document.getElementById("preview-text");
+const restoreBtn = document.getElementById("restore-btn");
 const editorCard = document.getElementById("editor-card");
 const viewNodesBtn = document.getElementById("view-nodes-btn");
 const viewYamlBtn = document.getElementById("view-yaml-btn");
@@ -37,7 +41,9 @@ let checkBusy = false;
 let lastYamlResult = null;
 let lastStatus = { state: "", key: "status.idle" };
 let files = [];
+let versions = [];
 let currentFile = null;
+let previewVersion = null;
 let dirty = false;
 let loadingFile = false;
 let saving = false;
@@ -97,6 +103,7 @@ function applyTranslations() {
   setStatus(lastStatus.state, lastStatus.key);
   if (lastYamlResult) setYamlStatus(lastYamlResult);
   renderFileList();
+  renderVersionList();
   updateFileMeta();
   updateViewButtons();
   flowCanvas?.refresh();
@@ -303,7 +310,12 @@ function graphToYaml(graph) {
   const doc = {
     name: String(start?.name || "").trim() || "pipeline",
     nodes: (graph.nodes || []).map((node) => {
-      const item = { id: node.id, type: node.type };
+      const item = {
+        id: node.id,
+        type: node.type,
+        x: Math.round(Number(node.x) || 0),
+        y: Math.round(Number(node.y) || 0),
+      };
       if (node.type === "start") item.name = node.name ?? "";
       if (node.type === "command") item.command = node.command ?? "";
       if (node.type === "end") item.echo = "done";
@@ -344,15 +356,15 @@ function yamlToGraph(text, previous = { nodes: [] }) {
     const node = {
       id,
       type,
-      x: Number.isFinite(prev?.x)
-        ? prev.x
-        : Number.isFinite(Number(raw.x))
-          ? Number(raw.x)
+      x: Number.isFinite(Number(raw.x))
+        ? Number(raw.x)
+        : Number.isFinite(prev?.x)
+          ? prev.x
           : 72 + nodes.length * 288,
-      y: Number.isFinite(prev?.y)
-        ? prev.y
-        : Number.isFinite(Number(raw.y))
-          ? Number(raw.y)
+      y: Number.isFinite(Number(raw.y))
+        ? Number(raw.y)
+        : Number.isFinite(prev?.y)
+          ? prev.y
           : 180,
     };
     if (type === "start") node.name = String(raw.name ?? doc.name ?? "");
@@ -399,6 +411,7 @@ function applyView(mode) {
   viewMode = mode === "yaml" ? "yaml" : "nodes";
   localStorage.setItem("editorView", viewMode);
   editorCard.dataset.view = viewMode;
+  document.querySelector(".workspace").dataset.view = viewMode;
   updateViewButtons();
   if (viewMode === "yaml") {
     window.requestAnimationFrame(() => {
@@ -427,9 +440,18 @@ function switchView(mode) {
 }
 
 function updateFileMeta() {
-  fileTitle.textContent = currentFile?.name || t("yaml.editorAria");
-  fileDirtyEl.classList.toggle("hidden", !dirty);
+  if (previewVersion) {
+    fileTitle.textContent = previewVersion.name;
+    previewText.textContent = t("files.previewing", { name: previewVersion.name });
+    previewBanner.classList.remove("hidden");
+    fileDirtyEl.classList.add("hidden");
+  } else {
+    fileTitle.textContent = currentFile?.name || t("yaml.editorAria");
+    previewBanner.classList.add("hidden");
+    fileDirtyEl.classList.toggle("hidden", !dirty);
+  }
   renderFileList();
+  renderVersionList();
 }
 
 function setEditorContent(content) {
@@ -450,6 +472,155 @@ function setEditorContent(content) {
   validateEditorYaml();
   editor.setSize("100%", "100%");
   editor.refresh();
+}
+
+function renderVersionList() {
+  versionListEl.replaceChildren();
+
+  if (!currentFile || !versions.length) {
+    const empty = document.createElement("p");
+    empty.className = "file-empty";
+    empty.textContent = t("files.historyEmpty");
+    versionListEl.appendChild(empty);
+    return;
+  }
+
+  for (const version of versions) {
+    const row = document.createElement("div");
+    row.className = "file-item";
+    if (previewVersion?.id === version.id) row.classList.add("previewing");
+
+    const openBtn = document.createElement("button");
+    openBtn.type = "button";
+    openBtn.className = "file-item-open";
+    openBtn.textContent = version.name;
+    openBtn.title = version.name;
+    openBtn.addEventListener("click", () => previewSnapshot(version));
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "file-item-delete";
+    delBtn.textContent = "×";
+    delBtn.setAttribute("aria-label", t("files.deleteSnapshot"));
+    delBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteSnapshot(version);
+    });
+
+    row.append(openBtn, delBtn);
+    versionListEl.appendChild(row);
+  }
+}
+
+async function refreshVersions() {
+  if (!currentFile) {
+    versions = [];
+    renderVersionList();
+    return;
+  }
+
+  const response = await fetch(`/api/files/${currentFile.id}/versions`);
+  if (!response.ok) {
+    versions = [];
+    renderVersionList();
+    return;
+  }
+  versions = await response.json();
+  renderVersionList();
+}
+
+function setPreviewMode(on) {
+  editor.setOption("readOnly", on ? "nocursor" : false);
+  editorCard.classList.toggle("is-preview", on);
+}
+
+function exitPreview() {
+  previewVersion = null;
+  setPreviewMode(false);
+}
+
+async function previewSnapshot(version) {
+  if (!currentFile) return;
+  const response = await fetch(`/api/files/${currentFile.id}/versions/${version.id}`);
+  if (!response.ok) {
+    setStatus("error", "files.loadFailed");
+    return;
+  }
+
+  previewVersion = await response.json();
+  setPreviewMode(true);
+  loadingFile = true;
+  editor.setValue(previewVersion.content ?? "");
+  loadingFile = false;
+  dirty = false;
+  loadGraphFromYaml(previewVersion.content ?? "");
+  updateFileMeta();
+  validateEditorYaml();
+  editor.setSize("100%", "100%");
+  editor.refresh();
+}
+
+async function restoreSnapshot() {
+  if (!currentFile || !previewVersion) return;
+
+  const ok = await openDialog({
+    title: t("files.restoreTitle"),
+    body: t("files.restoreBody", { name: previewVersion.name }),
+    confirmLabel: t("files.restore"),
+    cancelLabel: t("execute.cancel"),
+  });
+  if (!ok) return;
+
+  const response = await fetch(`/api/files/${currentFile.id}/rollback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ versionId: previewVersion.id }),
+  });
+  if (!response.ok) {
+    setStatus("error", "files.saveFailed");
+    return;
+  }
+
+  currentFile = await response.json();
+  exitPreview();
+  setEditorContent(currentFile.content);
+  setStatus("done", "status.saved");
+  await refreshFiles();
+  await refreshVersions();
+}
+
+async function deleteSnapshot(version) {
+  if (!currentFile) return;
+
+  const ok = await openDialog({
+    title: t("files.deleteSnapshotTitle"),
+    body: t("files.deleteSnapshotBody", { name: version.name }),
+    confirmLabel: t("files.deleteSnapshot"),
+    cancelLabel: t("execute.cancel"),
+    danger: true,
+  });
+  if (!ok) return;
+
+  const response = await fetch(`/api/files/${currentFile.id}/versions/${version.id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    setStatus("error", "files.saveFailed");
+    return;
+  }
+
+  if (previewVersion?.id === version.id) {
+    exitPreview();
+    if (currentFile) {
+      const reload = await fetch(`/api/files/${currentFile.id}`);
+      if (reload.ok) {
+        currentFile = await reload.json();
+        setEditorContent(currentFile.content);
+      }
+    }
+  }
+
+  await refreshVersions();
 }
 
 function renderFileList() {
@@ -498,9 +669,22 @@ async function refreshFiles() {
 }
 
 async function selectFile(id, { force = false } = {}) {
-  if (currentFile?.id === id) return;
+  if (currentFile?.id === id && !previewVersion) return;
 
-  if (!force && dirty) {
+  if (currentFile?.id === id && previewVersion) {
+    exitPreview();
+    const response = await fetch(`/api/files/${id}`);
+    if (!response.ok) {
+      setStatus("error", "files.loadFailed");
+      return;
+    }
+    currentFile = await response.json();
+    setEditorContent(currentFile.content);
+    await refreshVersions();
+    return;
+  }
+
+  if (!force && dirty && !previewVersion) {
     const ok = await openDialog({
       title: t("files.unsavedTitle"),
       body: t("files.unsavedBody", { name: currentFile?.name || "" }),
@@ -511,6 +695,8 @@ async function selectFile(id, { force = false } = {}) {
     if (!ok) return;
   }
 
+  exitPreview();
+
   const response = await fetch(`/api/files/${id}`);
   if (!response.ok) {
     setStatus("error", "files.loadFailed");
@@ -520,9 +706,11 @@ async function selectFile(id, { force = false } = {}) {
   currentFile = await response.json();
   localStorage.setItem("currentFileId", String(currentFile.id));
   setEditorContent(currentFile.content);
+  await refreshVersions();
 }
 
 async function saveCurrentFile() {
+  if (previewVersion) return;
   if (!currentFile || saving) {
     if (!currentFile) await createFile();
     return;
@@ -543,6 +731,7 @@ async function saveCurrentFile() {
     updateFileMeta();
     setStatus("done", "status.saved");
     await refreshFiles();
+    await refreshVersions();
   } catch {
     setStatus("error", "files.saveFailed");
   } finally {
@@ -615,13 +804,16 @@ async function deleteFile(file) {
   }
 
   if (currentFile?.id === file.id) {
+    exitPreview();
     currentFile = null;
+    versions = [];
     localStorage.removeItem("currentFileId");
     dirty = false;
   }
 
   await refreshFiles();
   if (!currentFile) {
+    renderVersionList();
     if (files[0]) await selectFile(files[0].id, { force: true });
     else setEditorContent("");
   }
@@ -636,7 +828,7 @@ async function loadInitialFile() {
 }
 
 editor.on("changes", () => {
-  if (!loadingFile && !syncingYaml) {
+  if (!loadingFile && !syncingYaml && !previewVersion) {
     dirty = true;
     updateFileMeta();
   }
@@ -650,6 +842,10 @@ checkYamlBtn.addEventListener("click", () => {
 
 newFileBtn.addEventListener("click", () => {
   createFile();
+});
+
+restoreBtn.addEventListener("click", () => {
+  restoreSnapshot();
 });
 
 viewNodesBtn.addEventListener("click", () => switchView("nodes"));
@@ -741,12 +937,108 @@ document.addEventListener("keydown", (event) => {
   }
 }, true);
 
+function setupSplitters() {
+  const workspace = document.querySelector(".workspace");
+  const explorer = document.querySelector(".file-explorer");
+  const history = document.getElementById("history-panel");
+  const nodePanel = document.getElementById("node-panel");
+  const explorerSash = document.getElementById("explorer-sash");
+  const historySash = document.getElementById("history-sash");
+  const paletteSash = document.getElementById("palette-sash");
+  const MIN_EXPLORER = 180;
+  const MIN_EDITOR = 280;
+  const MIN_PALETTE = 92;
+  const MIN_FILES = 88;
+  const MIN_HISTORY = 88;
+
+  const savedWidth = Number(localStorage.getItem("explorerWidth"));
+  if (Number.isFinite(savedWidth) && savedWidth >= MIN_EXPLORER) {
+    explorer.style.width = `${savedWidth}px`;
+  }
+  const savedHeight = Number(localStorage.getItem("historyHeight"));
+  if (Number.isFinite(savedHeight) && savedHeight >= MIN_HISTORY) {
+    history.style.height = `${savedHeight}px`;
+  }
+  const savedPalette = Number(localStorage.getItem("paletteWidth"));
+  if (Number.isFinite(savedPalette) && savedPalette >= MIN_PALETTE) {
+    nodePanel.style.width = `${savedPalette}px`;
+  }
+
+  function paletteVisible() {
+    return workspace.dataset.view !== "yaml";
+  }
+
+  function paletteOccupied() {
+    if (!paletteVisible()) return 0;
+    return (
+      nodePanel.getBoundingClientRect().width +
+      paletteSash.getBoundingClientRect().width
+    );
+  }
+
+  function bindSash(sash, axis, onMove) {
+    sash.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      sash.classList.add("is-active");
+      document.body.classList.add(axis === "x" ? "is-resizing-ew" : "is-resizing-ns");
+      sash.setPointerCapture(event.pointerId);
+
+      const move = (ev) => onMove(ev);
+      const up = () => {
+        sash.classList.remove("is-active");
+        document.body.classList.remove("is-resizing-ew", "is-resizing-ns");
+        sash.removeEventListener("pointermove", move);
+        sash.removeEventListener("pointerup", up);
+        editor.refresh();
+      };
+      sash.addEventListener("pointermove", move);
+      sash.addEventListener("pointerup", up);
+    });
+  }
+
+  bindSash(explorerSash, "x", (event) => {
+    const bounds = workspace.getBoundingClientRect();
+    const sashWidth = explorerSash.getBoundingClientRect().width;
+    const maxWidth = bounds.width - MIN_EDITOR - sashWidth - paletteOccupied();
+    const next = Math.min(maxWidth, Math.max(MIN_EXPLORER, event.clientX - bounds.left));
+    explorer.style.width = `${next}px`;
+    localStorage.setItem("explorerWidth", String(Math.round(next)));
+  });
+
+  bindSash(paletteSash, "x", (event) => {
+    const bounds = workspace.getBoundingClientRect();
+    const sashWidth = paletteSash.getBoundingClientRect().width;
+    const explorerW = explorer.getBoundingClientRect().width;
+    const explorerSashW = explorerSash.getBoundingClientRect().width;
+    const maxWidth = bounds.width - explorerW - explorerSashW - MIN_EDITOR - sashWidth;
+    const next = Math.min(maxWidth, Math.max(MIN_PALETTE, bounds.right - event.clientX));
+    nodePanel.style.width = `${next}px`;
+    localStorage.setItem("paletteWidth", String(Math.round(next)));
+  });
+
+  bindSash(historySash, "y", (event) => {
+    const bounds = explorer.getBoundingClientRect();
+    const sashHeight = historySash.getBoundingClientRect().height;
+    const fileBar = explorer.querySelector(".explorer-bar");
+    const fileBarH = fileBar ? fileBar.getBoundingClientRect().height : 44;
+    const maxHeight = Math.max(
+      MIN_HISTORY,
+      bounds.height - MIN_FILES - sashHeight - fileBarH
+    );
+    const next = Math.min(maxHeight, Math.max(MIN_HISTORY, bounds.bottom - event.clientY));
+    history.style.height = `${next}px`;
+    localStorage.setItem("historyHeight", String(Math.round(next)));
+  });
+}
+
 async function init() {
   applyTheme(currentTheme());
   flowCanvas = FlowCanvas.create({
     el: document.getElementById("flow-canvas"),
     t,
     onChange() {
+      if (previewVersion) return;
       const next = graphToYaml(flowCanvas.getGraph());
       if (next === editor.getValue()) return;
       writeYamlFromGraph();
@@ -754,6 +1046,9 @@ async function init() {
       updateFileMeta();
     },
   });
+  const nodePanel = document.getElementById("node-panel");
+  const palette = document.querySelector("#flow-canvas .flow-palette");
+  if (nodePanel && palette) nodePanel.appendChild(palette);
   applyView(viewMode);
   try {
     await setLanguage(currentLang);
@@ -767,6 +1062,7 @@ async function init() {
     validateEditorYaml();
   }
   editor.setSize("100%", "100%");
+  setupSplitters();
   window.addEventListener("resize", () => editor.refresh());
 }
 

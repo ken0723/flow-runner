@@ -59,7 +59,19 @@
     "nameInvalid": "請使用類似 pipeline.yml 的檔名",
     "nameExists": "已有同名檔案",
     "saveFailed": "儲存失敗",
-    "loadFailed": "無法載入檔案"
+    "loadFailed": "無法載入檔案",
+    "history": "歷史",
+    "historyEmpty": "尚未有快照",
+    "previewing": "預覽 {name}",
+    "restore": "還原",
+    "restoreTitle": "還原這個快照？",
+    "restoreBody": "目前的 YAML 會被「{name}」取代。",
+    "deleteSnapshot": "刪除快照",
+    "deleteSnapshotTitle": "刪除這個快照？",
+    "deleteSnapshotBody": "「{name}」會從歷史移除，目前檔案不會改變。",
+    "resizeExplorer": "調整檔案面板闊度",
+    "resizeHistory": "調整歷史高度",
+    "resizePalette": "調整節點面板闊度"
   },
   "execute": {
     "label": "執行",

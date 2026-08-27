@@ -243,13 +243,32 @@ h1 {
 .workspace {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
-  gap: 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+}
+
+.file-explorer {
+  width: 250px;
+  flex: 0 0 auto;
+  min-width: 180px;
+}
+
+.editor-card {
+  flex: 1 1 auto;
+  min-width: 280px;
+}
+
+.node-panel {
+  width: 112px;
+  flex: 0 0 auto;
+  min-width: 92px;
 }
 
 .file-explorer,
-.editor-card {
+.editor-card,
+.node-panel {
   min-height: 0;
   height: calc(100vh - 132px);
   display: flex;
@@ -258,6 +277,63 @@ h1 {
   border-radius: 14px;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   backdrop-filter: blur(8px);
+}
+
+.sash {
+  flex: 0 0 8px;
+  position: relative;
+  z-index: 6;
+  background: transparent;
+}
+
+.sash::after {
+  content: "";
+  position: absolute;
+  background: transparent;
+  border-radius: 99px;
+  transition: background 0.12s ease;
+}
+
+.sash-vertical {
+  cursor: ew-resize;
+}
+
+.sash-vertical::after {
+  top: 18px;
+  bottom: 18px;
+  left: 3px;
+  width: 2px;
+}
+
+.sash-horizontal {
+  cursor: ns-resize;
+  flex: 0 0 8px;
+}
+
+.sash-horizontal::after {
+  left: 18px;
+  right: 18px;
+  top: 3px;
+  height: 2px;
+}
+
+.sash:hover::after,
+.sash.is-active::after,
+body.is-resizing-ew .sash-vertical::after,
+body.is-resizing-ns .sash-horizontal::after {
+  background: var(--border-strong);
+}
+
+body.is-resizing-ew,
+body.is-resizing-ew * {
+  cursor: ew-resize !important;
+  user-select: none !important;
+}
+
+body.is-resizing-ns,
+body.is-resizing-ns * {
+  cursor: ns-resize !important;
+  user-select: none !important;
 }
 
 .explorer-bar,
@@ -284,8 +360,53 @@ h1 {
 
 .file-list {
   flex: 1;
+  min-height: 72px;
   overflow: auto;
   padding: 8px;
+}
+
+.history-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 88px;
+  height: 180px;
+  flex: 0 0 auto;
+}
+
+.version-list {
+  flex: 1;
+  min-height: 64px;
+}
+
+.file-item.previewing {
+  background: color-mix(in srgb, var(--amber) 14%, transparent);
+}
+
+.preview-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.preview-banner .check-btn {
+  min-width: 0;
+}
+
+#preview-text {
+  color: var(--amber);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editor-card.is-preview .flow-canvas {
+  pointer-events: none;
+}
+
+.editor-card.is-preview .yaml-status {
+  display: none;
 }
 
 .file-empty {
@@ -526,6 +647,11 @@ h1 {
   border-radius: 0 0 14px 14px;
 }
 
+.workspace[data-view="yaml"] .node-panel,
+.workspace[data-view="yaml"] #palette-sash {
+  display: none;
+}
+
 .flow-canvas {
   flex: 1;
   min-height: 0;
@@ -537,19 +663,18 @@ h1 {
 }
 
 .flow-viewport {
-  order: 1;
+  flex: 1;
+  min-width: 0;
 }
 
 .flow-palette {
-  order: 2;
-  width: 92px;
-  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 12px 10px;
-  border-left: 1px solid var(--border);
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  background: transparent;
   z-index: 3;
 }
 
@@ -1098,16 +1223,37 @@ h1 {
 
 @media (max-width: 840px) {
   .workspace {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .file-explorer {
-    height: 180px;
+    width: 100% !important;
+    min-width: 0;
+    height: 220px;
+  }
+
+  .sash-vertical {
+    display: none;
+  }
+
+  .node-panel {
+    width: 100% !important;
+    min-width: 0;
+    height: auto;
+    max-height: 140px;
+  }
+
+  .node-panel .flow-palette {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
   }
 
   .editor-card {
-    height: calc(100vh - 340px);
+    height: calc(100vh - 380px);
     min-height: 280px;
+    min-width: 0;
   }
 }
 
