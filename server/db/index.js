@@ -1,5 +1,5 @@
 const { Pool } = require("pg");
-const { hashContent } = require("./content-hash");
+const { hashContent } = require("../lib/content-hash");
 
 const pool = new Pool({
   connectionString:

@@ -1,6 +1,6 @@
 const express = require("express");
-const { hashContent } = require("./content-hash");
-const { applyContentChange } = require("./file-versions");
+const { hashContent } = require("../../lib/content-hash");
+const { applyContentChange } = require("../../db/versions");
 
 function asyncHandler(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);

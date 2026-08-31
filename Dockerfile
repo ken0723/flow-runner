@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 50051 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "server/grpc/server.js"]

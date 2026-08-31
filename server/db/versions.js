@@ -1,4 +1,4 @@
-const { hashContent, snapshotName } = require("./content-hash");
+const { hashContent, snapshotName } = require("../lib/content-hash");
 
 async function latestVersionHash(client, fileId) {
   const { rows } = await client.query(

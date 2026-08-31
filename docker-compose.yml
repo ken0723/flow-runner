@@ -20,6 +20,7 @@ services:
   grpc-server:
     build: .
     container_name: grpc-server
+    command: ["node", "server/grpc/server.js"]
     ports:
       - "50051:50051"
     restart: unless-stopped
@@ -27,7 +28,7 @@ services:
   gateway:
     build: .
     container_name: flow-runner-gateway
-    command: ["node", "gateway.js"]
+    command: ["node", "server/gateway/index.js"]
     ports:
       - "3000:3000"
     environment:
